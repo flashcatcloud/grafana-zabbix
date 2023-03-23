@@ -1,4 +1,4 @@
-module github.com/alexanderzobnin/grafana-zabbix
+module github.com/flashcatcloud/grafana-zabbix
 
 go 1.19
 
