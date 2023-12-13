@@ -1,5 +1,70 @@
 # Change Log
 
+## [4.4.4] - 2023-11-21
+
+### Feature
+
+- Update configuration page to follow best practices
+
+### Fix
+
+- Dashboards not showing up in configuration
+
+### Chore
+
+- Added lint github workflow
+- Update grafana-plugin-sdk-go to latest
+- Remove legacy form styling
+
+## [4.4.3] - 2023-10-10
+
+### Chore
+
+- Don't track requests on dashboard [#1707](https://github.com/grafana/grafana-zabbix/pull/1707)
+
+## [4.4.2] - 2023-10-09
+
+### Chore
+
+- Upgrade dependencies [#1692](https://github.com/grafana/grafana-zabbix/pull/1692) [#1702](https://github.com/grafana/grafana-zabbix/pull/1702)
+- Added feature tracking [#1688](https://github.com/grafana/grafana-zabbix/pull/1688)
+
+### Docs
+
+- Fix broken link in query editor and doc [#1701](https://github.com/grafana/grafana-zabbix/pull/1701)
+
+## [4.4.1] - 2023-08-30
+
+### Fixed
+
+- Plugin unavailable, [#1604](https://github.com/alexanderzobnin/grafana-zabbix/issues/1604)
+
+## [4.4.0] - 2023-08-17
+
+### Added
+
+- Support for secure socks proxy, [#1653](https://github.com/alexanderzobnin/grafana-zabbix/issues/1653)
+- Able to use API tokens for authentication, [#1513](https://github.com/alexanderzobnin/grafana-zabbix/issues/1513)
+- Problems: Able to select AND/OR tag evaluation rule, [#1600](https://github.com/alexanderzobnin/grafana-zabbix/issues/1600)
+
+### Fixed
+
+- Application filter does not work in some cases, [#1597](https://github.com/alexanderzobnin/grafana-zabbix/issues/1597)
+- Application filter in the triggers query, [#1643](https://github.com/alexanderzobnin/grafana-zabbix/issues/1643)
+- Problems: pagination on footer doesn't work [#1649](https://github.com/alexanderzobnin/grafana-zabbix/issues/1649)
+- Single host items contain the hostname in the legend, [#1335](https://github.com/alexanderzobnin/grafana-zabbix/issues/1335)
+- IT Services: displaying multiple SLA, [#1603](https://github.com/alexanderzobnin/grafana-zabbix/issues/1603)
+
+## [4.3.1] - 2023-03-23
+
+### Fixed
+
+- Cannot create or edit variables (unexpected error happened), [#1590](https://github.com/alexanderzobnin/grafana-zabbix/issues/1590)
+- Item tag filter not working properly, [#1594](https://github.com/alexanderzobnin/grafana-zabbix/issues/1594)
+- SLA dates differ in Grafana and Zabbix, [#1595](https://github.com/alexanderzobnin/grafana-zabbix/issues/1595)
+- Problems panel: invalid problem lastchange time for list layout, [#1596](https://github.com/alexanderzobnin/grafana-zabbix/issues/1596)
+- Problems panel: tags filter doesn't work in history mode, [#1592](https://github.com/alexanderzobnin/grafana-zabbix/issues/1592)
+
 ## [4.3.0] - 2023-03-21
 
 ### Added
@@ -47,7 +112,7 @@
 ### Fixed
 
 - IT Services not working with Zabbix 6.0, [#1408](https://github.com/alexanderzobnin/grafana-zabbix/issues/1408)
-- Problems panel: `Cannot read properties of undefined (reading 'trim')` error when tag has only name,  [#1420](https://github.com/alexanderzobnin/grafana-zabbix/issues/1420)
+- Problems panel: `Cannot read properties of undefined (reading 'trim')` error when tag has only name, [#1420](https://github.com/alexanderzobnin/grafana-zabbix/issues/1420)
 - Dashboards not included into plugin, [#1407](https://github.com/alexanderzobnin/grafana-zabbix/issues/1407)
 - Missing labels in response, [#1352](https://github.com/alexanderzobnin/grafana-zabbix/issues/1352)
 - Query returns all application data when host not found, [#1427](https://github.com/alexanderzobnin/grafana-zabbix/issues/1427)
@@ -97,7 +162,7 @@
 - Different item intervals compatibility (stacked graph issue), [#1211](https://github.com/alexanderzobnin/grafana-zabbix/issues/1211)
 - Random "Failed to call resource" errors and plugin restarts, [#1269](https://github.com/alexanderzobnin/grafana-zabbix/issues/1269)
 - Top function does not work if number of series less than provided N, [#1267](https://github.com/alexanderzobnin/grafana-zabbix/issues/1267)
-- Hostnames are not displayed on multiple selection (regular expression), [#1265](https://github.com/alexanderzobnin/grafana-zabbix/issues/1265)
+- Host names are not displayed on multiple selection (regular expression), [#1265](https://github.com/alexanderzobnin/grafana-zabbix/issues/1265)
 - Cannot unmarshal number into Go struct field ZabbixDatasourceSettingsDTO.timeout of type string, [#1254](https://github.com/alexanderzobnin/grafana-zabbix/issues/1254)
 - `sortSeries()` does not sort by series name, [#1274](https://github.com/alexanderzobnin/grafana-zabbix/issues/1274)
 
@@ -218,13 +283,13 @@ Grafana-Zabbix 4.0 comes with a bunch of changes under the hood. The most import
 
 **Prerequisites**: plugin requires Grafana 7.0 to run.
 
-Use the grafana-cli tool to install Zabbix from the commandline:
+Use the grafana-cli tool to install Zabbix from the command-line:
 
 1. `grafana-cli plugins install alexanderzobnin-zabbix-app`
 1. Unsigned plugins are not loading by default, so allow it in the Grafana config file:
-    ```sh
-    allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
-    ```
+   ```sh
+   allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
+   ```
 1. restart Grafana server
 
 Refer to [`allow_loading_unsigned_plugins`](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
@@ -310,9 +375,9 @@ Version 4.0 is currently in alpha state and not published at grafana.com. In ord
 1. Download `.zip` package with plugin from release assets (asset name is `grafana-zabbix-4.0.0-<alphaX|betaX>.zip`).
 1. Unpack it and put into grafana plugins folder.
 1. Unsigned plugins are not loading by default, so allow it in config:
-    ```sh
-    allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
-    ```
+   ```sh
+   allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
+   ```
 1. restart Grafana server
 
 Refer to [`allow_loading_unsigned_plugins`](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
@@ -537,7 +602,7 @@ option description for more information.
 - PostgreSQL support for Direct DB Connection.
 - _Triggers_ query mode which allows to count active alerts by group, host and application, [#141](https://github.com/alexanderzobnin/grafana-zabbix/issues/141)
 - `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447), thanks to [@mdorenkamp](https://github.com/mdorenkamp)
-- `percentil()` function, thanks to [@pedrohrf](https://github.com/pedrohrf)
+- `percentile()` function, thanks to [@pedrohrf](https://github.com/pedrohrf)
 - _Zabbix System Status_ example dashboard.
 
 ### Changed
@@ -615,7 +680,7 @@ option description for more information.
 
 - **Alerting**: highlight panel contained metrics with fired triggers.
 - **Alerting**: add thresholds to panels from zabbix triggers.
-- **Docs**: add docs for setAliasByRegex() from @v-zhuravlev
+- **Docs**: add docs for setAliasByRegex() from [@v-zhuravlev](https://github.com/v-zhuravlev)
 - Support millisecond resolution on graphs. Patch from Jay Dawes <ajaxous@gmail.com>.
 - Sum and count aggregations.
 - Expand user macros in items [#212](https://github.com/alexanderzobnin/grafana-zabbix/issues/212)

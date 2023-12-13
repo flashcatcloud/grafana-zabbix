@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
+import { InlineField, Select } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
-import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../types';
+import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions, ZabbixTagEvalType } from '../types';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
@@ -14,6 +14,7 @@ import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
+import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -68,6 +69,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
   tags: { filter: '' },
   proxy: { filter: '' },
   textFilter: '',
+  evaltype: ZabbixTagEvalType.AndOr,
   options: {
     showDisabledItems: false,
     skipEmptyValues: false,
@@ -196,7 +198,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
 
   return (
     <>
-      <InlineFieldRow>
+      <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
           <Select
             isSearchable={false}
@@ -206,10 +208,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
             onChange={onPropChange('queryType')}
           />
         </InlineField>
-        <div className="gf-form gf-form--grow">
-          <div className="gf-form-label gf-form-label--grow" />
-        </div>
-      </InlineFieldRow>
+      </QueryEditorRow>
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
       {queryType === c.MODE_ITEMID && renderItemIdsEditor()}
       {queryType === c.MODE_TEXT && renderTextMetricsEditor()}

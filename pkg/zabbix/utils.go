@@ -12,7 +12,7 @@ func (item *Item) ExpandItemName() string {
 	name := item.Name
 	key := item.Key
 
-	if strings.Index(key, "[") == -1 {
+	if !strings.Contains(key, "[") {
 		return name
 	}
 
@@ -34,14 +34,13 @@ func expandItems(items []*Item) []*Item {
 }
 
 func splitKeyParams(paramStr string) []string {
-	paramRunes := []rune(paramStr)
 	params := []string{}
 	quoted := false
 	inArray := false
 	splitSymbol := ","
 	param := ""
 
-	for _, r := range paramRunes {
+	for _, r := range paramStr {
 		symbol := string(r)
 		if symbol == `"` && inArray {
 			param += symbol
@@ -99,4 +98,18 @@ func itemTagToString(tag ItemTag) string {
 	} else {
 		return tag.Tag
 	}
+}
+
+func parseItemTag(tagStr string) ItemTag {
+	tag := ItemTag{}
+	firstIdx := strings.Index(tagStr, ":")
+	if firstIdx > 0 {
+		tag.Tag = strings.TrimSpace(tagStr[:firstIdx])
+		if firstIdx < len(tagStr)-1 {
+			tag.Value = strings.TrimSpace(tagStr[firstIdx+1:])
+		}
+	} else {
+		tag.Tag = strings.TrimSpace(tagStr)
+	}
+	return tag
 }

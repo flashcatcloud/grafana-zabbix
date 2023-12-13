@@ -494,10 +494,7 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
   const timestamps = [];
   for (let i = 0; i < response?.periods?.length; i++) {
     const period = response.periods[i];
-    if (i === 0) {
-      timestamps.push(period.period_from * 1000);
-    }
-    timestamps.push(period.period_to * 1000);
+    timestamps.push(period.period_from * 1000);
   }
 
   const timeFiled: Field = {
@@ -521,9 +518,6 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
       if (!values[j]) {
         values[j] = [];
       }
-      if (i === 0) {
-        values[j].push(value);
-      }
       values[j].push(value);
     }
   }
@@ -537,6 +531,74 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
       config: {},
       values: new ArrayVector<number>(values[i]),
     });
+  }
+
+  return new MutableDataFrame({
+    refId: target.refId,
+    name: 'SLI',
+    fields: [timeFiled, ...valueFields],
+  });
+}
+
+export function handleMultiSLIResponse(response: any[], itservices: any[], slas: any[], target: ZabbixMetricsQuery) {
+  if (!response || response?.length === 0) {
+    return new MutableDataFrame({
+      refId: target.refId,
+      name: 'SLI',
+      fields: [],
+    });
+  }
+
+  const firstResponse = response[0];
+  const timestamps = [];
+  for (let i = 0; i < firstResponse?.periods?.length; i++) {
+    const period = firstResponse.periods[i];
+    timestamps.push(period.period_from * 1000);
+  }
+
+  const timeFiled: Field = {
+    name: TIME_SERIES_TIME_FIELD_NAME,
+    type: FieldType.time,
+    config: {
+      custom: {},
+    },
+    values: new ArrayVector<number>(timestamps),
+  };
+
+  const valueFields: Field[] = [];
+  const slaProperty = mapLegacySLAProperty(target.slaProperty);
+
+  for (let respIdx = 0; respIdx < response.length; respIdx++) {
+    const res = response[respIdx];
+    const values: number[][] = [];
+    for (let i = 0; i < res?.sli?.length; i++) {
+      const slis = res.sli[i];
+      for (let j = 0; j < slis.length; j++) {
+        const sli = slis[j];
+        const value = sli[slaProperty];
+        if (!values[j]) {
+          values[j] = [];
+        }
+        values[j].push(value);
+      }
+    }
+
+    for (let i = 0; i < res?.serviceids?.length; i++) {
+      const serviceId = res?.serviceids[i].toString();
+      const service = itservices.find((s) => s.serviceid === serviceId);
+      let name = `${service?.name || serviceId}`;
+      if (response.length > 1) {
+        const sla = slas[respIdx];
+        name = `${name}: ${sla.name}`;
+      }
+
+      valueFields.push({
+        name,
+        type: FieldType.number,
+        config: {},
+        values: new ArrayVector<number>(values[i]),
+      });
+    }
   }
 
   return new MutableDataFrame({

@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"context"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -21,9 +22,9 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		URL:      "http://another.zabbix.org/zabbix",
 		JSONData: []byte("{}"),
 	}
-	modifiedDatasource, _ := newZabbixDatasourceInstance(modifiedDatasourceSettings)
+	modifiedDatasource, _ := newZabbixDatasourceInstance(context.Background(), modifiedDatasourceSettings)
 
-	basicDS, _ := newZabbixDatasourceInstance(basicDsSettings)
+	basicDS, _ := newZabbixDatasourceInstance(context.Background(), basicDsSettings)
 
 	tests := []struct {
 		name          string
@@ -58,7 +59,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ds := NewZabbixDatasource()
-			got, _ := ds.getDSInstance(tt.pluginContext)
+			got, _ := ds.getDSInstance(context.Background(), tt.pluginContext)
 
 			// Only checking the URL, being the easiest value to, and guarantee equality for
 			assert.Equal(t, tt.want.zabbix.GetAPI().GetUrl().String(), got.zabbix.GetAPI().GetUrl().String())

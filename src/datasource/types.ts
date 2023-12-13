@@ -1,6 +1,7 @@
 import { BusEventWithPayload, DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
 
 export interface ZabbixDSOptions extends DataSourceJsonData {
+  authType?: ZabbixAuthType;
   username: string;
   password?: string;
   trends: boolean;
@@ -14,10 +15,12 @@ export interface ZabbixDSOptions extends DataSourceJsonData {
   dbConnectionRetentionPolicy?: string;
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
+  enableSecureSocksProxy?: boolean;
 }
 
 export interface ZabbixSecureJSONData {
   password?: string;
+  apiToken?: string;
 }
 
 export interface ZabbixConnectionInfo {
@@ -56,6 +59,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   tags?: { filter: string };
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
   countTriggersBy?: 'problems' | 'items' | '';
+  evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
   // Problems
@@ -406,4 +410,14 @@ export interface ZBXAlert {
 
 export class ZBXQueryUpdatedEvent extends BusEventWithPayload<any> {
   static type = 'zbx-query-updated';
+}
+
+export enum ZabbixAuthType {
+  UserLogin = 'userLogin',
+  Token = 'token',
+}
+
+export enum ZabbixTagEvalType {
+  AndOr = '0',
+  Or = '2',
 }

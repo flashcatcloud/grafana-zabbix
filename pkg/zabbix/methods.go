@@ -2,7 +2,7 @@ package zabbix
 
 import (
 	"context"
-	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -116,6 +116,9 @@ func (ds *Zabbix) GetItems(
 		itemTagFilter = strings.Join(tagStrs, ",")
 	}
 	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
+	if err != nil {
+		return nil, err
+	}
 
 	return filterItemsByQuery(allItems, itemFilter)
 }
@@ -151,8 +154,11 @@ func (ds *Zabbix) GetItemsBefore54(
 	var allItems []*Item
 	if len(appids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "")
-	} else if len(hostids) > 0 {
+	} else if appFilter == "" && len(hostids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return filterItemsByQuery(allItems, itemFilter)
@@ -240,11 +246,22 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 	var allItems []*Item
 	itemType := "num"
 	showDisabled := false
+
 	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+	if err != nil {
+		return nil, err
+	}
 
 	var allTags []ItemTag
+	tagsMap := make(map[string]ItemTag)
 	for _, item := range allItems {
-		allTags = append(allTags, item.Tags...)
+		for _, itemTag := range item.Tags {
+			tagStr := itemTagToString(itemTag)
+			tagsMap[tagStr] = itemTag
+		}
+	}
+	for _, t := range tagsMap {
+		allTags = append(allTags, t)
 	}
 
 	return filterTags(allTags, tagFilter)
@@ -376,25 +393,29 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		params["selectTags"] = "extend"
 		if len(itemTagFilter) > 0 {
 			allTags := strings.Split(itemTagFilter, ",")
-			re := regexp.MustCompile(`(?m).*?([a-zA-Z0-9\s\-_]*):\s*([a-zA-Z0-9\-_\/:]*)`)
-			var tagsParams []map[string]string
-			for i := 0; i < len(allTags); i++ {
-				res := re.FindAllStringSubmatch(allTags[i], -1)
-				for i := range res {
-					tagParam := map[string]string{
-						"tag":      res[i][1],
-						"value":    res[i][2],
-						"operator": "1",
-					}
-					tagsParams = append(tagsParams, tagParam)
+			tagsParams := make([]map[string]string, 0)
+			for _, tagStr := range allTags {
+				tag := parseItemTag(tagStr)
+				tagParam := map[string]string{
+					"tag":      tag.Tag,
+					"value":    tag.Value,
+					"operator": "1",
 				}
+				tagsParams = append(tagsParams, tagParam)
 			}
+			// tags order should be handled for higher cache hit ratio
+			sort.Slice(tagsParams, func(i, j int) bool {
+				if tagsParams[i]["tag"] != tagsParams[j]["tag"] {
+					return tagsParams[i]["tag"] < tagsParams[j]["tag"]
+				}
+				return tagsParams[i]["value"] < tagsParams[j]["value"]
+			})
 			params["tags"] = tagsParams
 			params["evaltype"] = 2
 		}
 	}
 
-	if showDisabled == false {
+	if !showDisabled {
 		params["monitored"] = true
 	}
 
@@ -517,13 +538,4 @@ func (ds *Zabbix) GetVersion(ctx context.Context) (int, error) {
 	version = strings.Replace(version[0:3], ".", "", 1)
 	versionNum, err := strconv.Atoi(version)
 	return versionNum, err
-}
-
-func isAppMethodNotFoundError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	message := err.Error()
-	return message == `Method not found. Incorrect API "application".`
 }

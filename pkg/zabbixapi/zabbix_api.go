@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/bitly/go-simplejson"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 var (
@@ -168,6 +169,15 @@ func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, passwor
 	return nil
 }
 
+// AuthenticateWithToken performs authentication with API token.
+func (api *ZabbixAPI) AuthenticateWithToken(ctx context.Context, token string) error {
+	if token == "" {
+		return errors.New("API token is empty")
+	}
+	api.SetAuth(token)
+	return nil
+}
+
 func isDeprecatedUserParamError(err error) bool {
 	if err == nil {
 		return false
@@ -204,7 +214,7 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Req
 		return nil, fmt.Errorf("request failed, status: %v", res.Status)
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}

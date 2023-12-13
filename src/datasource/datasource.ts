@@ -26,6 +26,7 @@ import {
   toDataFrame,
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
+import { trackRequest } from './tracking';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -113,6 +114,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(request: DataQueryRequest<ZabbixMetricsQuery>) {
+    trackRequest(request);
+
     // Migrate old targets
     const requestTargets = request.targets.map((t) => {
       // Prevent changes of original object
@@ -542,6 +545,19 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const hostids = hosts?.map((h) => h.hostid);
     const appids = apps?.map((a) => a.applicationid);
     const options = getTriggersOptions(target, timeRange);
+
+    const tagsFilter = this.replaceTemplateVars(target.tags?.filter, request.scopedVars);
+    // replaceTemplateVars() builds regex-like string, so we should trim it.
+    const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
+    const tags = utils.parseTags(tagsFilterStr);
+    tags.forEach((tag) => {
+      // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
+      tag.operator = 1;
+    });
+    if (tags && tags.length) {
+      options.tags = tags;
+    }
+
     const alerts = await this.zabbix.getHostAlerts(hostids, appids, options);
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
@@ -673,6 +689,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     if (tags && tags.length) {
       problemsOptions.tags = tags;
+    }
+
+    if (target?.evaltype) {
+      problemsOptions.evaltype = target?.evaltype;
     }
 
     if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {

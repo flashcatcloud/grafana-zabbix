@@ -8,7 +8,7 @@ import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery } from '../../types';
+import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types';
 
 const showProblemsOptions: Array<SelectableValue<string>> = [
   { label: 'Problems', value: 'problems' },
@@ -23,6 +23,11 @@ const severityOptions: Array<SelectableValue<number>> = [
   { value: 3, label: 'Average' },
   { value: 4, label: 'High' },
   { value: 5, label: 'Disaster' },
+];
+
+const evaltypeOptions: Array<SelectableValue<ZabbixTagEvalType>> = [
+  { label: 'AND/OR', value: ZabbixTagEvalType.AndOr },
+  { label: 'OR', value: ZabbixTagEvalType.Or },
 ];
 
 export interface Props {
@@ -149,6 +154,8 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
     }
   };
 
+  const supportsApplications = datasource.zabbix.supportsApplications();
+
   return (
     <>
       <QueryEditorRow>
@@ -181,15 +188,17 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        <InlineField label="Application" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.application?.filter}
-            options={appOptions}
-            isLoading={appsLoading}
-            onChange={onFilterChange('application')}
-          />
-        </InlineField>
+        {supportsApplications && (
+          <InlineField label="Application" labelWidth={12}>
+            <MetricPicker
+              width={24}
+              value={query.application?.filter}
+              options={appOptions}
+              isLoading={appsLoading}
+              onChange={onFilterChange('application')}
+            />
+          </InlineField>
+        )}
         <InlineField label="Problem" labelWidth={12}>
           <Input
             width={24}
@@ -200,10 +209,19 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
         </InlineField>
         <InlineField label="Tags" labelWidth={12}>
           <Input
-            width={24}
+            width={36}
             defaultValue={query.tags?.filter}
             placeholder="tag1:value1, tag2:value2"
             onBlur={onTextFilterChange('tags')}
+          />
+        </InlineField>
+        <InlineField>
+          <Select
+            isSearchable={false}
+            width={15}
+            value={query.evaltype}
+            options={evaltypeOptions}
+            onChange={onPropChange('evaltype')}
           />
         </InlineField>
       </QueryEditorRow>

@@ -7,6 +7,7 @@ import { ShowProblemTypes, ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
+import { parseItemTag } from '../../../utils';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
@@ -206,10 +207,9 @@ export class ZabbixAPIConnector {
       if (itemTagFilter) {
         const allTags = itemTagFilter.split(',');
         let tagsParam = [];
-        const regex = /.*?([a-zA-Z0-9\s\-_]*):\s*([a-zA-Z0-9\-_\/:]*)/;
         for (let i = 0; i < allTags.length; i++) {
-          const matches = allTags[i].match(regex);
-          tagsParam.push({ tag: matches[1].replace('/', ''), value: matches[2].trim(), operator: '1' });
+          const tag = parseItemTag(allTags[i]);
+          tagsParam.push({ tag: tag.tag, value: tag.value, operator: '1' });
         }
         params.tags = tagsParam;
         // Use OR eval type
@@ -481,7 +481,7 @@ export class ZabbixAPIConnector {
   }
 
   getProblems(groupids, hostids, applicationids, options): Promise<ZBXProblem[]> {
-    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags } = options;
+    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype } = options;
 
     const params: any = {
       output: 'extend',
@@ -492,7 +492,7 @@ export class ZabbixAPIConnector {
       object: '0',
       sortfield: ['eventid'],
       sortorder: 'DESC',
-      evaltype: '2',
+      evaltype: '0',
       // preservekeys: '1',
       groupids,
       hostids,
@@ -510,6 +510,10 @@ export class ZabbixAPIConnector {
 
     if (tags) {
       params.tags = tags;
+    }
+
+    if (evaltype) {
+      params.evaltype = evaltype;
     }
 
     if (limit) {
@@ -608,7 +612,7 @@ export class ZabbixAPIConnector {
   }
 
   getEventsHistory(groupids, hostids, applicationids, options) {
-    const { timeFrom, timeTo, severities, limit, value, tags } = options;
+    const { timeFrom, timeTo, severities, limit, value, tags, evaltype } = options;
 
     const params: any = {
       output: 'extend',
@@ -617,7 +621,7 @@ export class ZabbixAPIConnector {
       value: '1',
       source: '0',
       object: '0',
-      evaltype: '2',
+      evaltype: '0',
       sortfield: ['eventid'],
       sortorder: 'DESC',
       select_acknowledges: 'extend',
@@ -642,6 +646,10 @@ export class ZabbixAPIConnector {
 
     if (tags) {
       params.tags = tags;
+    }
+
+    if (evaltype) {
+      params.evaltype = evaltype;
     }
 
     return this.request('event.get', params).then(utils.mustArray);
@@ -711,7 +719,7 @@ export class ZabbixAPIConnector {
   }
 
   async getHostAlerts(hostids, applicationids, options): Promise<ZBXTrigger[]> {
-    const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
+    const { minSeverity, acknowledged, tags, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
       hostids: hostids,
@@ -741,6 +749,11 @@ export class ZabbixAPIConnector {
     if (timeFrom || timeTo) {
       params.lastChangeSince = timeFrom;
       params.lastChangeTill = timeTo;
+    }
+
+    if (tags) {
+      params.tags = tags;
+      params.evaltype = 0;
     }
 
     let triggers = await this.request('trigger.get', params);

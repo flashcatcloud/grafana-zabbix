@@ -2,10 +2,12 @@ package zabbix
 
 import (
 	"context"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 var basicDatasourceInfo = &backend.DataSourceInstanceSettings{
@@ -19,7 +21,7 @@ var emptyParams = map[string]interface{}{}
 
 func TestLogin(t *testing.T) {
 	zabbixClient, _ := MockZabbixClient(basicDatasourceInfo, `{"result":"secretauth"}`, 200)
-	err := zabbixClient.Login(context.Background())
+	err := zabbixClient.Authenticate(context.Background())
 
 	assert.NoError(t, err)
 	assert.Equal(t, "secretauth", zabbixClient.api.GetAuth())
@@ -27,7 +29,7 @@ func TestLogin(t *testing.T) {
 
 func TestLoginError(t *testing.T) {
 	zabbixClient, _ := MockZabbixClient(basicDatasourceInfo, `{"result":""}`, 500)
-	err := zabbixClient.Login(context.Background())
+	err := zabbixClient.Authenticate(context.Background())
 
 	assert.Error(t, err)
 	assert.Equal(t, "", zabbixClient.api.GetAuth())
@@ -86,4 +88,56 @@ func TestNonCachedQuery(t *testing.T) {
 	assert.NoError(t, err)
 	result, _ = resp.String()
 	assert.Equal(t, "testNew", result)
+}
+
+func TestItemTagCache(t *testing.T) {
+	zabbixClient, _ := MockZabbixClient(
+		basicDatasourceInfo,
+		`{"result":[{"itemid":"1","name":"test1"}]}`,
+		200,
+	)
+	// tag filtering is on >= 54 version
+	zabbixClient.version = 64
+	zabbixClient.settings.AuthType = settings.AuthTypeToken
+	zabbixClient.api.SetAuth("test")
+	items, err := zabbixClient.GetAllItems(
+		context.Background(),
+		nil,
+		nil,
+		"num",
+		false,
+		"Application: test, interface: test",
+	)
+
+	assert.NoError(t, err)
+	if assert.Len(t, items, 1) {
+		item := items[0]
+		assert.Equal(t, "1", item.ID)
+		assert.Equal(t, "test1", item.Name)
+	}
+
+	zabbixClient, _ = MockZabbixClientResponse(
+		zabbixClient,
+		// intentionally different response to test if the cache hits
+		`{"result":[{"itemid":"2","name":"test2"}]}`,
+		200,
+	)
+	zabbixClient.api.SetAuth("test")
+	items, err = zabbixClient.GetAllItems(
+		context.Background(),
+		nil,
+		nil,
+		"num",
+		false,
+		// change tag order
+		"interface: test, Application: test",
+	)
+
+	assert.NoError(t, err)
+	if assert.Len(t, items, 1) {
+		item := items[0]
+		// test if it still uses cached response
+		assert.Equal(t, "1", item.ID)
+		assert.Equal(t, "test1", item.Name)
+	}
 }

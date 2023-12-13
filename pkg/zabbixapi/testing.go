@@ -2,7 +2,7 @@ package zabbixapi
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -15,7 +15,7 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
-//NewTestClient returns *http.Client with Transport replaced to avoid making real calls
+// NewTestClient returns *http.Client with Transport replaced to avoid making real calls
 func NewTestClient(fn RoundTripFunc) *http.Client {
 	return &http.Client{
 		Transport: RoundTripFunc(fn),
@@ -36,7 +36,7 @@ func MockZabbixAPI(body string, statusCode int) (*ZabbixAPI, error) {
 		httpClient: NewTestClient(func(req *http.Request) *http.Response {
 			return &http.Response{
 				StatusCode: statusCode,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(body)),
+				Body:       io.NopCloser(bytes.NewBufferString(body)),
 				Header:     make(http.Header),
 			}
 		}),

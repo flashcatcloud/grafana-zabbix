@@ -15,6 +15,7 @@ jest.mock(
     getTemplateSrv: () => ({
       replace: jest.fn().mockImplementation((query) => query),
     }),
+    reportInteraction: jest.fn(),
   }),
   { virtual: true }
 );
@@ -25,8 +26,10 @@ jest.mock('../components/AnnotationQueryEditor', () => ({
 
 describe('ZabbixDatasource', () => {
   let ctx: any = {};
+  let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     ctx.instanceSettings = {
       jsonData: {
         alerting: false,
@@ -58,6 +61,10 @@ describe('ZabbixDatasource', () => {
 
     ctx.ds = new ZabbixDatasource(ctx.instanceSettings);
     ctx.ds.templateSrv = templateSrvMock;
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   describe('When querying text data', () => {
